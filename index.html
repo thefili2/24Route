@@ -8,6 +8,8 @@
     <!-- Favicon (icon in the browser tab) -->
     <link rel="icon" href="logo.png" type="image/png">
 
+   
+
     <style>
         body {
             margin: 0;
@@ -160,9 +162,16 @@
             background-color: #1e1e2f;
             color: white;
         }
+
+       
+
+
+
+
     </style>
 </head>
 <body>
+    
     <div id="sidebar">
         <div id="header">
             <!-- Logo -->
@@ -197,8 +206,8 @@
         const map = document.getElementById("map");
         const mapContainer = document.getElementById("map-container");
         const routeList = document.getElementById("route-list");
-
-        // ICAO code to chart link mapping
+    
+        // Mappa dei codici ICAO con i relativi link
         const icaoLinks = {
             "IRFD": "https://drive.google.com/file/d/1a8ZqQjxqUC99J5oSskeH6dmsBeDTRUb9/view?usp=sharing",
             "IPPH": "https://drive.google.com/file/d/1Qhg6zRsIBAjeC_iidsy39FVt5UZhdi5o/view?usp=sharing",
@@ -213,39 +222,49 @@
             "ILKL": "https://docs.google.com/document/d/1AKiBFBU1rz4D-HOWmMZ9VzaxCa1UednCUy-rwLwkFuQ/edit?tab=t.0",
             "ISKP": "https://drive.google.com/file/d/1Z9cGKwezwV_LL1tz0Uf257__fOexgvd7/view"
         };
+    
+       // Aggiungi un punto sulla mappa quando viene cliccata
+mapContainer.addEventListener("click", (e) => {
+    const rect = map.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width * map.width;
+    const y = (e.clientY - rect.top) / rect.height * map.height;
+    const name = prompt("Enter waypoint name:");
+    if (!name) return;
 
-        mapContainer.addEventListener("click", (e) => {
-            const rect = map.getBoundingClientRect();
-            const x = (e.clientX - rect.left) / rect.width * map.width;
-            const y = (e.clientY - rect.top) / rect.height * map.height;
-            const name = prompt("Enter waypoint name:");
-            if (!name) return;
+    const point = { name, x, y };
+    points.push(point);
+    renderPoints();
+});
 
-            const point = { name, x, y };
-            points.push(point);
-            renderPoints();
-        });
+// Renderizza i punti sulla lista laterale
+function renderPoints() {
+    routeList.innerHTML = "";
+    points.forEach(point => {
+        const li = document.createElement("li");
 
-        function renderPoints() {
-            routeList.innerHTML = "";
-            points.forEach(point => {
-                const li = document.createElement("li");
+        // Crea un link se il nome del punto corrisponde a un codice ICAO
+        if (icaoLinks[point.name]) {
+            const link = document.createElement("a");
+            link.href = "#";  // Imposta il link a # per evitare il comportamento predefinito
+            link.textContent = point.name;
 
-                // Check if the point name matches an ICAO code and create a link if it does
-                if (icaoLinks[point.name]) {
-                    const link = document.createElement("a");
-                    link.href = icaoLinks[point.name];
-                    link.target = "_blank";
-                    link.textContent = point.name;
-                    li.appendChild(link);
-                } else {
-                    li.textContent = point.name;
-                }
-
-                routeList.appendChild(li);
+            // Aggiungi un evento di click per aprire una nuova finestra
+            link.addEventListener("click", function(e) {
+                e.preventDefault();  // Previeni il comportamento predefinito del link
+                window.open(icaoLinks[point.name], '_blank', 'width=' + (window.innerWidth / 2) + ',height=' + window.innerHeight + ',scrollbars=yes');
             });
+
+            li.appendChild(link);
+        } else {
+            li.textContent = point.name;
         }
 
+        routeList.appendChild(li);
+    });
+}
+
+    
+        // Crea la rotta tra i punti
         function createRoute() {
             if (points.length < 2) {
                 alert("Add at least two points to create a route.");
@@ -254,47 +273,49 @@
             const flightLevel = prompt("Enter FL (e.g., 030 for FL30, 310 for FL310):");
             if (!flightLevel) return;
             const color = parseInt(flightLevel) > 30 ? "purple" : "green";
-            
+    
+            // Rimuove le linee esistenti prima di creare nuove linee
             document.querySelectorAll(".route-line").forEach(line => line.remove());
             for (let i = 0; i < points.length - 1; i++) {
                 const line = document.createElement("div");
                 line.classList.add("route-line");
                 line.style.background = color;
-                
+    
                 const x1 = points[i].x;
                 const y1 = points[i].y;
                 const x2 = points[i + 1].x;
                 const y2 = points[i + 1].y;
-                
+    
                 const length = Math.hypot(x2 - x1, y2 - y1);
                 const angle = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
-                
+    
                 line.style.width = `${length}px`;
                 line.style.left = `${x1}px`;
                 line.style.top = `${y1}px`;
                 line.style.transform = `rotate(${angle}deg)`;
-                
+    
                 mapContainer.appendChild(line);
             }
             document.querySelectorAll(".point").forEach(p => p.remove());
         }
-
+    
+        // Esporta la rotta in formato testo o JSON
         function exportRoute() {
             const format = document.getElementById("exportFormat").value;
             let routeText;
-
+    
             if (format === "arrows") {
                 routeText = points.map(p => p.name).join(" --> ");
             } else {
                 routeText = points.map(p => p.name).join(".");
             }
-
+    
             // Copia la rotta negli appunti
             navigator.clipboard.writeText(routeText).then(() => {
                 alert("Route copied: " + routeText);
             });
-
-            // Crea il file JSON e scarica
+    
+            // Crea il file JSON e inizia il download
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(points));
             const downloadAnchor = document.createElement("a");
             downloadAnchor.setAttribute("href", dataStr);
@@ -303,7 +324,8 @@
             downloadAnchor.click();
             downloadAnchor.remove();
         }
-
+    
+        // Importa la rotta da un file JSON
         function importRoute() {
             const file = document.getElementById("importFile").files[0];
             const reader = new FileReader();
@@ -314,6 +336,16 @@
             };
             reader.readAsText(file);
         }
+    
+        // Reset mappa
+        function resetMap() {
+            points = [];
+            renderPoints();
+        }
+    
+    
     </script>
-</body>
+    
+
+    
 </html>
