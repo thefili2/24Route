@@ -25,11 +25,10 @@
             font-size: 14px;
             color: white;
             margin-top: 20px;
-            }
+        }
         #credits strong {
             color: #6200ea; /* Puoi cambiare il colore se preferisci */
         }
-
 
         #sidebar {
             width: 280px;
@@ -134,6 +133,33 @@
         a:active {
             color: inherit; /* Prevent color change on click */
         }
+
+        /* Style the select dropdown to match the design */
+        select {
+            background-color: #6200ea;
+            color: white;
+            border: none;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        select:hover {
+            background-color: #3700b3;
+        }
+
+        /* Add custom styling for select dropdown arrow */
+        select::-ms-expand {
+            display: none; /* Hide default dropdown arrow */
+        }
+
+        /* Ensure the dropdown is visually consistent */
+        select option {
+            background-color: #1e1e2f;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -144,6 +170,14 @@
             <h2>24Route</h2>
         </div>
         <ul id="route-list"></ul>
+        
+        <!-- New Select Dropdown for Export Format -->
+        <label for="exportFormat">Select Export Format:</label>
+        <select id="exportFormat">
+            <option value="arrows">With Arrows (-->)</option>
+            <option value="points">With Points (.)</option>
+        </select>
+        
         <button onclick="createRoute()">Create Route</button>
         <button onclick="exportRoute()">Export Route</button>
         <input type="file" id="importFile" accept=".json" onchange="importRoute()">
@@ -151,12 +185,13 @@
     <div id="map-container">
         <img id="map" src="map.png" alt="Enroute Chart">
     </div>
-<!-- Credits Section -->
+    
+    <!-- Credits Section -->
     <div id="credits">
-      <p>Made by <strong>Thefili02</strong> | DS: <strong>the320guy</strong></p>
+      <p>Made by <strong>Thefili02</strong> | <a href="https://discord.gg/mUAFVxZ3WD">Discord Server</a> | <a href="https://docs.google.com/document/d/1KL_BDDfu19QcK1ziWwG6iXDGsPBrNjCFcCDQBeoqt-4/edit?usp=sharing">User Guide</a> </p>
+
     </div>
 
-    
     <script>
         let points = [];
         const map = document.getElementById("map");
@@ -245,11 +280,21 @@
         }
 
         function exportRoute() {
-            const routeText = points.map(p => p.name).join(" --> ");
+            const format = document.getElementById("exportFormat").value;
+            let routeText;
+
+            if (format === "arrows") {
+                routeText = points.map(p => p.name).join(" --> ");
+            } else {
+                routeText = points.map(p => p.name).join(".");
+            }
+
+            // Copia la rotta negli appunti
             navigator.clipboard.writeText(routeText).then(() => {
                 alert("Route copied: " + routeText);
             });
-            
+
+            // Crea il file JSON e scarica
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(points));
             const downloadAnchor = document.createElement("a");
             downloadAnchor.setAttribute("href", dataStr);
@@ -260,13 +305,11 @@
         }
 
         function importRoute() {
-            const fileInput = document.getElementById("importFile");
-            const file = fileInput.files[0];
-            if (!file) return;
-            
+            const file = document.getElementById("importFile").files[0];
             const reader = new FileReader();
-            reader.onload = (e) => {
-                points = JSON.parse(e.target.result);
+            reader.onload = function (event) {
+                const data = JSON.parse(event.target.result);
+                points = data;
                 renderPoints();
             };
             reader.readAsText(file);
